@@ -1,0 +1,92 @@
+services:
+  db:
+    image: postgres:16-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+      # - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    expose:
+      - &db-port 5432
+    hostname: &db-host DBHOSTNAME
+    # ports:
+      # - 5432:5432
+    environment:
+      POSTGRES_USER: &db-user user
+      POSTGRES_PASSWORD: &db-password drowssap
+      POSTGRES_DB: &db-name database
+
+    healthcheck: 
+      # TODO: fix 
+      test: "pg_isready --username=$(printenv POSTGRES_USER) --dbname=$(printenv POSTGRES_DB) && psql --username=$(printenv POSTGRES_USER) --dbname=$(printenv POSTGRES_DB) --list" 
+      timeout: 10s 
+      retries: 5
+      interval: 5s
+      start_period: 15s
+
+  rabbit:
+    image: rabbitmq:3.13-alpine
+    ports:
+      - 5672:5672
+      - 15672:15672
+    environment:
+      RABBITMQ_DEFAULT_USER: &rabbit-user rabbit
+      RABBITMQ_DEFAULT_PASS: &rabbit-password rabbit
+      RABBITMQ_DEFAULT_VHOST: /
+    hostname: &rabbit-host RABBITHOSTNAME
+
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 5s
+      timeout: 30s
+      start_period: 20s
+      retries: 5
+
+  backend:
+    build: 
+      context: .
+      dockerfile: backend.Dockerfile
+    ports: 
+      - 3000:3000
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbit:
+        condition: service_healthy
+    environment:
+      DB_HOST: *db-host
+      DB_USER: *db-user
+      DB_PASSWORD: *db-password
+      DB_PORT: *db-port
+      DB_NAME: *db-name
+      # DATABASE_URL: postgres://{{*db-user}}:{{*db-password}}@{{*db-host}}:{{*db-port}}/{{*db-name}}
+      SECRET: yeet
+      RABBITMQ_HOST: *rabbit-host
+      RABBITMQ_USER: *rabbit-user
+      RABBITMQ_PASSWORD: *rabbit-password
+    hostname: &backend-host backend
+
+  auth-backend:
+    build: 
+      context: .
+      dockerfile: microservice.Dockerfile
+    ports: 
+      - 3001:3000
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbit:
+        condition: service_healthy
+    environment:
+      DB_HOST: *db-host
+      DB_USER: *db-user
+      DB_PASSWORD: *db-password
+      DB_PORT: *db-port
+      DB_NAME: *db-name
+      # DATABASE_URL: postgres://{{*db-user}}:{{*db-password}}@{{*db-host}}:{{*db-port}}/{{*db-name}}
+      SECRET: yeet
+      RABBITMQ_HOST: *rabbit-host
+      RABBITMQ_USER: *rabbit-user
+      RABBITMQ_PASSWORD: *rabbit-password
+    hostname: &auth-host auth
+
+volumes:
+  postgres_data:
