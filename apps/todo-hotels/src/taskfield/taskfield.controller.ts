@@ -37,7 +37,8 @@ export class TaskfieldController {
     if (!ans) throw new HttpException('Conflict', HttpStatus.CONFLICT);
     return ans;
   }
-  @Get(':taskId')
+
+  @Get('/task/:taskId')
   @ApiResponse({ status: HttpStatus.OK, type: [TaskFieldDTO] })
   @ApiResponse({ status: HttpStatus.NOT_FOUND })
   async getAllTaskFields(
@@ -51,6 +52,7 @@ export class TaskfieldController {
     if (!taskFields) throw new HttpException('Not Found', HttpStatus.NOT_FOUND);
     return taskFields;
   }
+
   @Get(':taskFieldId')
   @ApiResponse({ status: HttpStatus.OK, type: TaskFieldDTO })
   @ApiResponse({ status: HttpStatus.NOT_FOUND })
@@ -65,6 +67,7 @@ export class TaskfieldController {
     if (!taskField) throw new HttpException('Not Found', HttpStatus.NOT_FOUND);
     return taskField;
   }
+
   @Put(':taskFieldId')
   @UsePipes(ZodValidationPipe)
   @ApiResponse({ status: HttpStatus.OK, type: TaskFieldDTO })
@@ -82,6 +85,7 @@ export class TaskfieldController {
     if (!taskField) throw new HttpException('Not Found', HttpStatus.NOT_FOUND);
     return taskField;
   }
+
   @Delete(':taskFieldId')
   @ApiResponse({ status: HttpStatus.OK })
   @ApiResponse({ status: HttpStatus.NOT_FOUND })

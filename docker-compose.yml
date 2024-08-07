@@ -15,7 +15,6 @@ services:
       POSTGRES_DB: &db-name database
 
     healthcheck: 
-      # TODO: fix 
       test: "pg_isready --username=$(printenv POSTGRES_USER) --dbname=$(printenv POSTGRES_DB) && psql --username=$(printenv POSTGRES_USER) --dbname=$(printenv POSTGRES_DB) --list" 
       timeout: 10s 
       retries: 5
@@ -31,6 +30,8 @@ services:
       RABBITMQ_DEFAULT_USER: &rabbit-user rabbit
       RABBITMQ_DEFAULT_PASS: &rabbit-password rabbit
       RABBITMQ_DEFAULT_VHOST: /
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbit log_levels [{connection,error}]"
+      RABBITMQ_LOGS: "false"
     hostname: &rabbit-host RABBITHOSTNAME
 
     healthcheck:
@@ -40,12 +41,35 @@ services:
       start_period: 20s
       retries: 5
 
+  golang-backend:
+    build: 
+      context: .
+      dockerfile: golang-backend.Dockerfile
+    ports:
+      - 8080:8080
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbit:
+        condition: service_healthy
+    hostname: &golang-host golanghost
+    environment:
+      DB_HOST: *db-host
+      DB_USER: *db-user
+      DB_PASSWORD: *db-password
+      DB_PORT: *db-port
+      DB_NAME: *db-name
+      DB_URL: postgresql://user:drowssap@DBHOSTNAME:5432/database
+      GOLANG_PORT: &golang-port 8080
+    command: "./main"
+
   backend:
     build: 
       context: .
       dockerfile: backend.Dockerfile
     ports: 
       - 3000:3000
+      - 5555:5555
     depends_on:
       db:
         condition: service_healthy
@@ -57,12 +81,15 @@ services:
       DB_PASSWORD: *db-password
       DB_PORT: *db-port
       DB_NAME: *db-name
-      # DATABASE_URL: postgres://{{*db-user}}:{{*db-password}}@{{*db-host}}:{{*db-port}}/{{*db-name}}
+      DB_URL: postgresql://user:drowssap@DBHOSTNAME:5432/database
       SECRET: yeet
       RABBITMQ_HOST: *rabbit-host
       RABBITMQ_USER: *rabbit-user
       RABBITMQ_PASSWORD: *rabbit-password
+      GOLANG_PORT: *golang-port
+      GOLANG_ADDR: *golang-host
     hostname: &backend-host backend
+    command: /bin/sh -c "pnpm prisma migrate deploy && pnpm prisma studio & pnpm start:todo-hotels"
 
   auth-backend:
     build: 
@@ -81,12 +108,13 @@ services:
       DB_PASSWORD: *db-password
       DB_PORT: *db-port
       DB_NAME: *db-name
-      # DATABASE_URL: postgres://{{*db-user}}:{{*db-password}}@{{*db-host}}:{{*db-port}}/{{*db-name}}
+      DB_URL: postgresql://user:drowssap@DBHOSTNAME:5432/database
       SECRET: yeet
       RABBITMQ_HOST: *rabbit-host
       RABBITMQ_USER: *rabbit-user
       RABBITMQ_PASSWORD: *rabbit-password
     hostname: &auth-host auth
+    command: "pnpm start:auth"
 
 volumes:
   postgres_data:

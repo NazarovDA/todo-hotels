@@ -36,7 +36,7 @@ export class ColumnController {
     return ans;
   }
 
-  @Get(':projectId')
+  @Get('/project/:projectId')
   @ApiResponse({ status: HttpStatus.OK, type: [ColumnDTO] })
   @ApiResponse({ status: HttpStatus.NOT_FOUND })
   async getAllColumns(

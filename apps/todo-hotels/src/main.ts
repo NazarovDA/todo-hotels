@@ -19,5 +19,7 @@ async function bootstrap() {
 
   await app.listen(3000);
   console.log('main');
+
+  // console.log(process.env);
 }
 bootstrap();

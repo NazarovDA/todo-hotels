@@ -5,7 +5,7 @@ WORKDIR /app
 COPY package*.json ./
 COPY pnpm-lock.yaml ./
 
-ARG DATABASE_URL
+ARG DB_URL
 ARG SECRET
 ARG RABBITMQ_HOST
 ARG RABBITMQ_USER
@@ -17,15 +17,15 @@ ARG DB_PASSWORD
 ARG DB_PORT
 ARG DB_NAME
 
-ENV DB_URL=postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}
+# ENV DB_URL="postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
 
 RUN corepack enable
 RUN pnpm install
 
 COPY . .
 
-RUN pnpm prisma migrate
+# RUN pnpm prisma migrate
 RUN pnpm prisma generate
 RUN pnpm build auth
 
-ENTRYPOINT [ "pnpm", "start:auth" ]
+# ENTRYPOINT [ "pnpm", "start:auth" ]

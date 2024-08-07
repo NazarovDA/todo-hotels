@@ -43,7 +43,7 @@ export class TaskController {
     return task;
   }
 
-  @Get(':columnId')
+  @Get('/column/:columnId')
   @ApiResponse({ status: HttpStatus.OK, type: [TaskDeepDTO] })
   async getTasks(@GetUser() user: User, @Param('columnId') columnId: string) {
     return await this.taskService.getTasks(user.id, columnId);

@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = env("DB_URL")
 }
 
 
@@ -62,13 +62,20 @@ model TaskField {
   projectId         String
 
   type Type
-  value String
+  value String @default(cuid())
 
   taskId String
   project           Project            @relation("ProjectTaskFields", fields: [projectId], references: [id], onDelete: Cascade)
   task              Task               @relation("TaskFields", fields: [taskId], references: [id], onDelete: Cascade)
 
   @@map("task_fields")
+}
+
+model TaskFieldValue {
+  id String @id @default(cuid())
+  value String
+
+  @@map("task_field_value")
 }
 
 enum Type {
